@@ -79,5 +79,6 @@ class SetGame:
         card_2 = self.table[card_2_index]
         card_3 = self.table[card_3_index]
         if valid_set(card_1, card_2, card_3):
-            self.player.extend(self.table.pop(ci) for ci in (card_1_index, card_2_index, card_3_index))
+            cards = (card_1_index, card_2_index, card_3_index)
+            self.player.extend(self.table.pop(ci) for ci in cards)
             self.table.extend(self.deck.pop(i) for i in range(3))
