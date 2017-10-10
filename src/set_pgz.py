@@ -1,5 +1,6 @@
 from itertools import product
 from random import shuffle
+from math import floor
 
 COLORS = ('red', 'green', 'purple')
 SHAPES = ('diamond', 'squiggle', 'oval')
@@ -7,21 +8,6 @@ SHADINGS = ('solid', 'striped', 'open')
 NUMBERS = (1, 2, 3)
 
 class SetCard:
-    """
-    Represents a single Set game card. Create a card specifying a valid color,
-    shape, shading and number:
-
-    SetCard(color, shape, shading, number)
-
-    color (str): red, green or purple
-    shape (str): diamond, squiggle or oval
-    shading (str): solid, striped or open
-    number (int): 1, 2 or 3
-
-    e.g:
-
-    >>> card = SetCard(color='red', shape='diamond', shading='solid', number=1)
-    """
     def __init__(self, color, shape, shading, number):
         if color not in COLORS:
             raise ValueError(
@@ -43,6 +29,7 @@ class SetCard:
         self.shape = shape
         self.shading = shading
         self.number = number
+        self.sprite = Actor('{}{}{}{}'.format(color, shape, shading, number))
 
     def __repr__(self):
         return '<SetCard object: {} {} {} {}>'.format(
@@ -62,13 +49,11 @@ def valid_set(card_1, card_2, card_3):
     return all(_validate(p) for p in properties)
 
 class SetGame:
-    """
-    Represents a set game
-    """
     def __init__(self, random=True):
         self.deck = self._create_deck(random)
         self.table = [self.deck.pop() for i in range(12)]
         self.player = []
+        self.selected = []
 
     def _create_deck(self, random):
         combinations = product(COLORS, SHAPES, SHADINGS, NUMBERS)
@@ -85,3 +70,45 @@ class SetGame:
             cards = (card_1_index, card_2_index, card_3_index)
             self.player.extend(self.table.pop(ci) for ci in cards)
             self.table.extend(self.deck.pop(i) for i in range(3))
+        else:
+            raise ValueError('Not a valid set')
+
+WIDTH = 1000
+HEIGHT = 800
+
+cw = 200
+ch = 100
+border = 100
+gap = 200
+
+game = SetGame()
+
+def draw_table():
+    for i, card in enumerate(game.table):
+        row = gap * floor(i / 4) + border
+        col = gap * (i % 4) + border
+        card.sprite.pos = (col, row)
+        card.sprite.draw()
+
+def update():
+    screen.clear()
+    screen.fill((255, 255, 255))
+    draw_table()
+
+def on_mouse_down(pos):
+    for card in game.table:
+        if card.sprite.collidepoint(pos):
+            table_index = game.table.index(card)
+            if table_index not in game.selected:
+                game.selected.append(table_index)
+                print('Added', game.selected)
+                if len(game.selected) == 3:
+                    try:
+                        game.take(*game.selected)
+                        game.selected = []
+                    except ValueError:
+                        print('Not a valid set')
+            else:
+                selected_index = game.selected.index(table_index)
+                game.selected.pop(selected_index)
+                print('Removed', game.selected)
