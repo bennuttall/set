@@ -1,4 +1,4 @@
-from itertools import product
+from itertools import product, combinations
 from random import shuffle
 from math import floor
 
@@ -51,9 +51,10 @@ def valid_set(card_1, card_2, card_3):
 class SetGame:
     def __init__(self, random=True):
         self.deck = self._create_deck(random)
-        self.table = [self.deck.pop() for i in range(12)]
+        self.table = {i: self.deck.pop() for i in range(12)}
         self.player = []
         self.selected = []
+        self.available_sets = self.get_available_sets()
 
     def _create_deck(self, random):
         combinations = product(COLORS, SHAPES, SHADINGS, NUMBERS)
@@ -68,10 +69,23 @@ class SetGame:
         card_3 = self.table[card_3_index]
         if valid_set(card_1, card_2, card_3):
             cards = (card_1_index, card_2_index, card_3_index)
-            self.player.extend(self.table.pop(ci) for ci in cards)
-            self.table.extend(self.deck.pop(i) for i in range(3))
+            for ci in cards:
+                self.player.append(self.table.pop(ci))
+                try:
+                    self.table[ci] = self.deck.pop()
+                except IndexError:
+                    self.table[ci] = None
+            self.available_sets = self.get_available_sets()
         else:
             raise ValueError('Not a valid set')
+
+    def get_available_sets(self):
+        all_cards = [card for card in self.table.values() if card is not None]
+        possible_sets = combinations(all_cards, 3)
+        valid_sets = [cards for cards in possible_sets if valid_set(*cards)]
+        for cards in valid_sets:
+            print('Valid set:', cards)
+        return valid_sets
 
 WIDTH = 1000
 HEIGHT = 800
@@ -84,24 +98,33 @@ gap = 200
 game = SetGame()
 
 def draw_table():
-    for i, card in enumerate(game.table):
+    for i, card in game.table.items():
+        if card is None:
+            continue
         row = gap * floor(i / 4) + border
         col = gap * (i % 4) + border
         card.sprite.pos = (col, row)
         card.sprite.draw()
+        if i in game.selected:
+            outline = Actor('outline')
+            outline.pos = card.sprite.pos
+            outline.draw()
 
 def update():
     screen.clear()
     screen.fill((255, 255, 255))
     draw_table()
+    text = 'Available sets: {}'.format(len(game.available_sets))
+    screen.draw.text(text, (50, 600), fontsize=100, color='black')
+    text = 'Player points: {}'.format(len(game.player))
+    screen.draw.text(text, (50, 700), fontsize=100, color='black')
 
 def on_mouse_down(pos):
-    for card in game.table:
+    for table_index, card in game.table.items():
         if card.sprite.collidepoint(pos):
-            table_index = game.table.index(card)
             if table_index not in game.selected:
                 game.selected.append(table_index)
-                print('Added', game.selected)
+                print('Added:', game.selected)
                 if len(game.selected) == 3:
                     try:
                         game.take(*game.selected)
@@ -111,4 +134,4 @@ def on_mouse_down(pos):
             else:
                 selected_index = game.selected.index(table_index)
                 game.selected.pop(selected_index)
-                print('Removed', game.selected)
+                print('Removed:', game.selected)
