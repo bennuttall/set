@@ -49,9 +49,10 @@ def valid_set(card_1, card_2, card_3):
     return all(_validate(p) for p in properties)
 
 class SetGame:
-    def __init__(self, random=True):
+    def __init__(self, cards=12, random=True):
         self.deck = self._create_deck(random)
-        self.table = {i: self.deck.pop() for i in range(12)}
+        self.table = {i: None for i in range(21)}
+        self.add_cards_to_table(cards)
         self.player = []
         self.selected = []
         self.available_sets = self.get_available_sets()
@@ -62,6 +63,16 @@ class SetGame:
         if random:
             shuffle(deck)
         return deck
+        
+    def add_cards_to_table(self, n):
+        for i in range(n):
+            if len(self.deck) == 0:
+                print("Deck now empty")
+                return False
+            card = self.deck.pop()
+            pos = len([v for v in self.table.values() if v])
+            self.table[pos] = card
+        return True
 
     def take(self, card_1_index, card_2_index, card_3_index):
         card_1 = self.table[card_1_index]
@@ -85,4 +96,13 @@ class SetGame:
         valid_sets = [cards for cards in possible_sets if valid_set(*cards)]
         for cards in valid_sets:
             print('Valid set:', cards)
+        if len(valid_sets) == 0:
+            print("No valid sets available, adding 3 cards")
+            cards_added = self.add_cards_to_table(3)
+            if cards_added:
+                return self.get_available_sets()
         return valid_sets
+        
+    @property
+    def is_over(self):
+        return len(self.deck) == 0 and len(self.available_sets) == 0

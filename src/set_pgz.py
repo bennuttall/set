@@ -9,14 +9,14 @@ ch = 100
 border = 100
 gap = 200
 
-game = SetGame()
+game = SetGame(cards=12)
 
 def draw_table():
     for i, card in game.table.items():
         if card is None:
             continue
-        row = gap * floor(i / 4) + border
-        col = gap * (i % 4) + border
+        col = gap * floor(i / 3) + border
+        row = gap * (i % 3) + border
         card.sprite.pos = (col, row)
         card.sprite.draw()
         if i in game.selected:
@@ -28,14 +28,19 @@ def update():
     screen.clear()
     screen.fill((255, 255, 255))
     draw_table()
-    text = 'Available sets: {}'.format(len(game.available_sets))
+    if game.is_over:
+        text = 'End of game!'
+    else:
+        text = 'Available sets: {}'.format(len(game.available_sets))
     screen.draw.text(text, (50, 600), fontsize=100, color='black')
     text = 'Player points: {}'.format(len(game.player))
     screen.draw.text(text, (50, 700), fontsize=100, color='black')
 
 def on_mouse_down(pos):
+    if game.is_over:
+        return
     for table_index, card in game.table.items():
-        if card.sprite.collidepoint(pos):
+        if card and card.sprite.collidepoint(pos):
             if table_index not in game.selected:
                 game.selected.append(table_index)
                 print('Added:', game.selected)
