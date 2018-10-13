@@ -62,12 +62,14 @@ assert len(game.deck) == deck_size - table_size
 assert len(game.player) == 0
 
 # test taking invalid set in a game
-game.take(0, 1, 3)
+with pytest.raises(ValueError):
+    game.take(0, 1, 3)
 assert len(game.table) == table_size
 assert len(game.deck) == deck_size - table_size
 assert len(game.player) == 0
 
-game.take(0, 1, 4)
+with pytest.raises(ValueError):
+    game.take(0, 1, 4)
 assert len(game.table) == table_size
 assert len(game.deck) == deck_size - table_size
 assert len(game.player) == 0
@@ -82,3 +84,5 @@ game.take(6, 7, 8)
 assert len(game.table) == table_size
 assert len(game.deck) == deck_size - table_size - 2 * set_size
 assert len(game.player) == 2 * set_size
+
+print("Tests passing!")

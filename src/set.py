@@ -1,5 +1,6 @@
-from itertools import product
+from itertools import product, combinations
 from random import shuffle
+from pgzero.actor import Actor
 
 COLORS = ('red', 'green', 'purple')
 SHAPES = ('diamond', 'squiggle', 'oval')
@@ -7,21 +8,6 @@ SHADINGS = ('solid', 'striped', 'open')
 NUMBERS = (1, 2, 3)
 
 class SetCard:
-    """
-    Represents a single Set game card. Create a card specifying a valid color,
-    shape, shading and number:
-
-    SetCard(color, shape, shading, number)
-
-    color (str): red, green or purple
-    shape (str): diamond, squiggle or oval
-    shading (str): solid, striped or open
-    number (int): 1, 2 or 3
-
-    e.g:
-
-    >>> card = SetCard(color='red', shape='diamond', shading='solid', number=1)
-    """
     def __init__(self, color, shape, shading, number):
         if color not in COLORS:
             raise ValueError(
@@ -43,6 +29,7 @@ class SetCard:
         self.shape = shape
         self.shading = shading
         self.number = number
+        self.sprite = Actor('{}{}{}{}'.format(color, shape, shading, number))
 
     def __repr__(self):
         return '<SetCard object: {} {} {} {}>'.format(
@@ -62,13 +49,12 @@ def valid_set(card_1, card_2, card_3):
     return all(_validate(p) for p in properties)
 
 class SetGame:
-    """
-    Represents a set game
-    """
     def __init__(self, random=True):
         self.deck = self._create_deck(random)
-        self.table = [self.deck.pop() for i in range(12)]
+        self.table = {i: self.deck.pop() for i in range(12)}
         self.player = []
+        self.selected = []
+        self.available_sets = self.get_available_sets()
 
     def _create_deck(self, random):
         combinations = product(COLORS, SHAPES, SHADINGS, NUMBERS)
@@ -83,5 +69,20 @@ class SetGame:
         card_3 = self.table[card_3_index]
         if valid_set(card_1, card_2, card_3):
             cards = (card_1_index, card_2_index, card_3_index)
-            self.player.extend(self.table.pop(ci) for ci in cards)
-            self.table.extend(self.deck.pop(i) for i in range(3))
+            for ci in cards:
+                self.player.append(self.table.pop(ci))
+                try:
+                    self.table[ci] = self.deck.pop()
+                except IndexError:
+                    self.table[ci] = None
+            self.available_sets = self.get_available_sets()
+        else:
+            raise ValueError('Not a valid set')
+
+    def get_available_sets(self):
+        all_cards = [card for card in self.table.values() if card is not None]
+        possible_sets = combinations(all_cards, 3)
+        valid_sets = [cards for cards in possible_sets if valid_set(*cards)]
+        for cards in valid_sets:
+            print('Valid set:', cards)
+        return valid_sets
